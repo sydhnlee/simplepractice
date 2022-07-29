@@ -30,7 +30,7 @@ appointment_dates = Hash.new([])
 (1).upto(APPOINTMENTS) do |a|
     patient_num = a % PATIENTS_PER_DOCTOR
     if a > (APPOINTMENTS / 2)
-        appointment_dates[patient_num] += [{start_time: (DateTime.now + (a % (APPOINTMENTS / 2) + 1)), duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now}]
+        appointment_dates[patient_num] += [{start_time: (DateTime.now + (a - (APPOINTMENTS / 2))), duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now}]
     else
         appointment_dates[patient_num] += [{start_time: (DateTime.now - (((APPOINTMENTS / 2) + 1) - a)), duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now}]
     end
