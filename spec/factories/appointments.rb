@@ -4,5 +4,13 @@ FactoryBot.define do
     patient { create(:patient) }
     start_time { Time.zone.now }
     duration_in_minutes { 50 }
+    
+    trait :past do
+      start_time {1.week.ago}
+    end
+
+    trait :future do
+      start_time {1.week.from_now}
+    end
   end
 end
