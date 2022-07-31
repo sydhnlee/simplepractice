@@ -1,8 +1,7 @@
 class Api::DoctorsController < ApplicationController
   def index
-    # TODO: return all values
-    # TODO: return filtered values
-    query = Doctor.includes(:appointments).where(appointments: {id: nil})
-    render json: query
+    # TODO: return doctors without appointments
+    @query = Doctor.includes(:appointments).where(appointments: {id: nil})
+    render json: @query
   end
 end
