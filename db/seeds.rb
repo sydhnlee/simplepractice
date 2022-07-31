@@ -8,7 +8,7 @@ DOCTORS = 10
 PATIENTS_PER_DOCTOR = 10
 APPOINTMENTS_PER_PATIENT = 10
 PATIENTS = DOCTORS * PATIENTS_PER_DOCTOR
-APPOINTMENTS = APPOINTMENTS_PER_PATIENT * PATIENTS_PER_DOCTOR
+APPOINTMENTS = APPOINTMENTS_PER_PATIENT * PATIENTS_PER_DOCTOR # Number of appointments with unique start_time(s)
 DOCTOR_NAMES = ['Strange', 'Toboggan', 'Who', 'Doom', 'Frankenstein', 'Dolittle', 'Xavier', 'Octavious', 'Mario', 'Eggman']
 FIRST_NAMES = [
     'Sydney', 'Charlie', 'Julien', 'Peter', 'Samuel',
@@ -27,31 +27,49 @@ LAST_NAMES = [
 patient_names = Set.new()
 appointment_dates = Hash.new([])
 
+# Creates 100 unique appointments
+# Fills appointment_dates hash with 10 (PATIENTS_PER_DOCTOR) key/value pairs
+# Key -> unique patient number for a single doctor (0-9)
+# Value -> List of hashes representing the 10 appointments unique to a patient of one doctor (5 in past & future)
 (1).upto(APPOINTMENTS) do |a|
     patient_num = a % PATIENTS_PER_DOCTOR
+
+    # Creates half (5) of the appointments with start_time(s) in the past & future
     if a > (APPOINTMENTS / 2)
-        appointment_dates[patient_num] += [{start_time: (DateTime.now + (a - (APPOINTMENTS / 2))), duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now}]
+        appointment_dates[patient_num] += [{start_time: (DateTime.now + (a - (APPOINTMENTS / 2)))}]
     else
-        appointment_dates[patient_num] += [{start_time: (DateTime.now - (((APPOINTMENTS / 2) + 1) - a)), duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now}]
+        appointment_dates[patient_num] += [{start_time: (DateTime.now - (((APPOINTMENTS / 2) + 1) - a))}]
     end
 end
 
+# Creates 10 Doctor objects
 DOCTOR_NAMES.each do |x|
     Doctor.create(name: "Dr. #{x}")
 end
 
-curr_doc = Doctor.left_outer_joins(:patients).group("doctors.id").having("COUNT(patients) < 10").first
+# Loops until 100 unique patient names have been generated
+curr_doc = Doctor.left_outer_joins(:patients).group("doctors.id").having("COUNT(patients) < #{PATIENTS_PER_DOCTOR}").first
 while patient_names.length < PATIENTS
+
+    # Generates a name at random 
+    # FIRST_NAMES.length * MIDDLE_INITIALS.length * LAST_NAMES.length -> 20 * 26 * 20 -> 10,400 possible unique names
     first = FIRST_NAMES[rand(FIRST_NAMES.length)]
     middle = MIDDLE_INITIALS[rand(MIDDLE_INITIALS.length)]
     last = LAST_NAMES[rand(LAST_NAMES.length)]
     new_name = "#{first} #{middle} #{last}"
 
+    # Creates a new Patient object if the generated patient name is unique 
     if patient_names.add?(new_name)
         new_patient = curr_doc.patients.create(name: new_name)
-        appointments = new_patient.appointments.create_with(doctor_id: curr_doc.id).create(appointment_dates[patient_names.length % PATIENTS_PER_DOCTOR])
+
+         # Creates associated Appointment objects for the new Patient by utilizing the appointment_dates hash
+        appointments = new_patient.appointments
+                        .create_with(doctor_id: curr_doc.id, duration_in_minutes: 50, created_at: DateTime.now, updated_at: DateTime.now)
+                        .create(appointment_dates[patient_names.length % PATIENTS_PER_DOCTOR])
+        
+        # Reassigns curr_doc to a new Doctor object once the patient count for curr_doc reaches PATIENTS_PER_DOCTOR (10)
         if patient_names.length % PATIENTS_PER_DOCTOR == 0
-            curr_doc = Doctor.left_outer_joins(:patients).group("doctors.id").having("COUNT(patients) < 10").first
+            curr_doc = Doctor.left_outer_joins(:patients).group("doctors.id").having("COUNT(patients) < #{PATIENTS_PER_DOCTOR}").first
         end
     end
 end
